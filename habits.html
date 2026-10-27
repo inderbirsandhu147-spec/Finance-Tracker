@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Habits</title>
+<style>
+:root{--bg:#f6f3ee;--ink:#25221d;--mute:#7b756a;--card:#fff;--line:#e4ded3;--ok:#3f9c5a}
+@media (prefers-color-scheme:dark){:root{--bg:#171512;--ink:#efebe3;--mute:#9a9486;--card:#221f1b;--line:#35312b}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0 auto;background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,system-ui,sans-serif;padding:env(safe-area-inset-top) 18px calc(env(safe-area-inset-bottom) + 100px);max-width:680px}
+button{font:inherit;color:inherit}
+.hd{display:flex;justify-content:space-between;align-items:center;margin-top:22px;gap:8px}
+h1{font-size:22px;margin:0;flex:1}
+.b{padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+.b.p{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+.b.danger{color:#d9534f}.b:disabled{opacity:.35}
+.wk{display:flex;align-items:center;gap:8px;margin:16px 0 10px}
+.wk .lbl{flex:1;text-align:center;font-weight:600;font-size:15px}
+.wd{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.dc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 0 8px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.dc small{color:var(--mute);font-size:11px}.dc b{font-size:16px}
+.dc i{width:60%;height:26px;border-radius:5px;background:var(--line);display:flex;align-items:flex-end;overflow:hidden}
+.dc u{display:block;width:100%;background:var(--ok)}
+.dc.sel{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}.dc.fut{opacity:.4}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+.pcard .t{display:flex;justify-content:space-between;gap:8px;font-weight:600}.pcard .m{color:var(--mute);font-weight:400;font-size:14px;white-space:nowrap}
+.prog{height:12px;border-radius:7px;background:var(--line);overflow:hidden;margin-top:10px}
+.prog i{display:block;height:100%;background:var(--ink)}.prog.full i{background:var(--ok)}
+.chips{display:flex;gap:8px;margin:12px 0;overflow-x:auto}
+.chip{padding:7px 14px;border-radius:20px;border:1px solid var(--line);background:var(--card);font-size:14px;white-space:nowrap}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.h{background:var(--card);border:1px solid var(--line);border-left:6px solid var(--c);border-radius:16px;padding:14px;margin-bottom:14px}
+.top{display:flex;align-items:center;gap:12px}
+.chk{width:46px;height:46px;border-radius:50%;border:2px solid var(--c);background:none;color:#fff;font-size:22px;flex:none;padding:0}
+.chk.on{background:var(--c)}
+.name{flex:1;font-weight:600;background:none;border:0;text-align:left;padding:0;min-width:0}
+.streak{color:var(--mute);font-size:14px;font-weight:400}
+.dots{display:flex;gap:6px;margin-top:12px}
+.d{flex:1;text-align:center;font-size:11px;color:var(--mute)}
+.d i{display:block;height:24px;border-radius:7px;background:var(--line);margin-bottom:3px}
+.d.on i{background:var(--c)}.d.fut{opacity:.35}
+body.dense .h{padding:8px 10px;margin-bottom:8px;border-radius:12px}
+body.dense .chk{width:34px;height:34px;font-size:17px}
+body.dense .top{gap:10px}
+body.dense .streak{display:none}
+body.dense .dots{margin-top:0;position:absolute;display:none}
+body.dense .rowc{display:flex;align-items:center;gap:8px}
+body.dense .rowc .top{flex:1;min-width:0}
+body.dense .rowc .dots{display:flex;position:static;width:46%;gap:3px;flex:none}
+body.dense .d span{display:none}body.dense .d i{height:20px;margin:0;border-radius:5px}
+.more{margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
+.stats{display:flex;gap:8px;margin-bottom:14px}
+.stat{flex:1;background:var(--bg);border-radius:12px;padding:8px 6px;text-align:center}
+.stat b{display:block;font-size:20px}.stat span{font-size:12px;color:var(--mute)}
+.mh{display:flex;align-items:center;gap:8px;margin-bottom:8px}.mh span{flex:1;text-align:center;font-weight:600}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal div{aspect-ratio:1;border-radius:7px;background:var(--line);font-size:11px;display:flex;align-items:center;justify-content:center;color:var(--mute)}
+.cal .hd2{background:none;aspect-ratio:auto;height:16px}.cal .blank,.cal .fut{background:none}.cal .on{background:var(--c);color:#fff}
+.cal .tod{outline:2px solid var(--ink);outline-offset:1px}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.acts .b{flex:1;white-space:nowrap}
+.sw{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.sw button{width:30px;height:30px;border-radius:50%;border:3px solid transparent;background:var(--c);padding:0}.sw button.on{border-color:var(--ink)}
+.hint{color:var(--mute);font-size:13px;margin-top:10px}
+.empty{color:var(--mute);text-align:center;padding:30px 0}
+.fab{position:fixed;right:max(18px,calc(50% - 322px));bottom:calc(env(safe-area-inset-bottom) + 20px);width:58px;height:58px;border-radius:50%;border:0;background:var(--ink);color:var(--bg);font-size:30px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+input{font:inherit;font-size:16px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%;margin:8px 0}
+input.bad{border-color:#d9534f}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9;padding:16px}
+.box{border-radius:18px;padding:18px;width:min(380px,100%);max-height:90vh;overflow:auto;background:var(--card);color:var(--ink)}
+.box .m{color:var(--mute);font-size:14px;margin:6px 0}.btns{display:flex;gap:8px;margin-top:10px}.btns .b{flex:1}.col2{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="hd"><h1>Habits</h1><button class="b" id="dn"></button><button class="b" id="bk">Backup</button></div>
+<div class="wk"><button class="b" id="pv" aria-label="Previous week">‹</button><div class="lbl" id="wl"></div><button class="b" id="nx" aria-label="Next week">›</button></div>
+<div class="wd" id="wd"></div>
+<div class="pcard"><div class="t"><span id="pt"></span><span class="m" id="pc"></span></div><div class="prog" id="pb"></div></div>
+<div style="display:flex;justify-content:flex-end"><button class="chip" id="tdy" hidden>Back to today</button></div>
+<div class="chips" id="chips"></div>
+<div id="list"></div>
+<button class="fab" id="fab" aria-label="New habit">+</button>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function tap(el,fn){el.addEventListener('pointerdown',e=>e.preventDefault());el.addEventListener('click',fn)}
+function ask(o,cb){const ov=document.createElement('div');ov.className='ov';ov.innerHTML='<div class="box"><b>'+esc(o.title)+'</b><p class="m">'+esc(o.msg||'')+'</p>'+(o.input!=null?'<input value="'+esc(o.input)+'">':'')+'<div class="btns"><button class="b">Cancel</button><button class="b p">'+esc(o.ok||'OK')+'</button></div></div>';document.body.appendChild(ov);const[c,k]=ov.querySelectorAll('button'),inp=ov.querySelector('input');c.onclick=()=>ov.remove();k.onclick=()=>{const v=inp?inp.value:true;ov.remove();cb(v)};if(inp)inp.focus()}
+const csv=rows=>rows.map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+function backup(APP,get,set,valid,rows){
+  const ov=document.createElement('div');ov.className='ov';
+  ov.innerHTML='<div class="box"><b>Backup</b><p class="m" id="bm">Your data is saved only in this browser. Back it up now and then.</p><div class="col2"><button class="b p">Download backup (.json)</button><button class="b">Download spreadsheet (.csv)</button><button class="b">Copy backup text</button><button class="b">Restore from file…</button><button class="b">Restore from pasted text…</button><button class="b">Close</button></div><input type="file" hidden accept=".json,application/json,text/plain"></div>';
+  document.body.appendChild(ov);
+  const bs=ov.querySelectorAll('button'),fi=ov.querySelector('input'),msg=t=>ov.querySelector('#bm').textContent=t,stamp=new Date().toISOString().slice(0,10);
+  const pack=()=>JSON.stringify({app:APP,version:1,exported:new Date().toISOString(),data:get()},null,1);
+  const dl=(n,t,ty)=>{try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:ty}));a.download=n;document.body.appendChild(a);a.click();a.remove();msg('Downloaded '+n+'. Look in your Files or Downloads.')}catch(e){msg('Download was blocked here. Use “Copy backup text” instead.')}};
+  const restore=txt=>{let j;try{j=JSON.parse(txt)}catch(e){return msg('That isn’t a valid backup.')}
+    if(!j||j.app!==APP||!j.data||!valid(j.data))return msg('That backup is not for this app.');
+    ask({title:'Replace current data?',msg:'Everything in this app will be replaced by the backup.',ok:'Replace'},()=>{set(j.data);msg('Backup restored.')})};
+  bs[0].onclick=()=>dl(APP+'-backup-'+stamp+'.json',pack(),'application/json');
+  bs[1].onclick=()=>dl(APP+'-'+stamp+'.csv','\ufeff'+csv(rows()),'text/csv');
+  bs[2].onclick=()=>{(navigator.clipboard?navigator.clipboard.writeText(pack()):Promise.reject()).then(()=>msg('Backup copied. Paste it into Notes or an email.'),()=>msg('Copy was blocked here. Use the download button.'))};
+  bs[3].onclick=()=>fi.click();
+  fi.onchange=()=>{const f=fi.files[0];if(!f)return;const r=new FileReader();r.onload=()=>restore(r.result);r.readAsText(f);fi.value=''};
+  bs[4].onclick=()=>ask({title:'Paste backup text',input:'',ok:'Restore'},restore);
+  bs[5].onclick=()=>ov.remove();
+}
+
+const K='habits.v1',COLORS=['#d9534f','#e08a1e','#d4b020','#3f9c5a','#2a8fbd','#7a5cc7','#c2457f','#6b7280'],DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const key=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const D=k=>new Date(k+'T12:00:00'),addD=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const now=()=>{const d=new Date();d.setHours(12,0,0,0);return d},today=()=>key(now()),sun=d=>addD(d,-d.getDay());
+let S,sel=today(),wk=sun(now()),filter='all',open=null,cal=null;
+try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
+S=S||{habits:[]};S.dense=!!S.dense;
+const fix=()=>S.habits.forEach((h,i)=>{h.id=h.id||'h'+Date.now()+i;h.done=h.done||{};h.created=h.created||Object.keys(h.done).sort()[0]||today()});fix();
+const saveLocal=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};const save=()=>{saveLocal();if(window.Sync)window.Sync.changed()};
+const ap=(h,k)=>!h.archived&&(h.created<=k||h.done[k]);
+function dayStat(k){const l=S.habits.filter(h=>ap(h,k)),d=l.filter(h=>h.done[k]).length;return{n:l.length,d,p:l.length?d/l.length:0}}
+function stats(h){let best=0,run=0,prev=null;Object.keys(h.done).sort().forEach(k=>{const d=D(k);run=(prev&&Math.round((d-prev)/864e5)===1)?run+1:1;best=Math.max(best,run);prev=d});
+  let cur=0,i=h.done[today()]?0:1;while(h.done[key(addD(now(),-i))]){cur++;i++}
+  let c=0;for(let j=0;j<30;j++)if(h.done[key(addD(now(),-j))])c++;return{cur,best,pct:Math.round(c/30*100)}}
+function tg(h,k){if(k>today())return;if(h.done[k])delete h.done[k];else h.done[k]=1;if(k<h.created)h.created=k;save();draw()}
+function move(h,dir){let i=S.habits.indexOf(h),j=i+dir;while(S.habits[j]&&!!S.habits[j].archived!==!!h.archived)j+=dir;if(S.habits[j]){[S.habits[i],S.habits[j]]=[S.habits[j],S.habits[i]];save();draw()}}
+
+function draw(){
+  document.body.classList.toggle('dense',S.dense);$('dn').textContent=S.dense?'Roomy':'Compact';
+  const t=today(),we=addD(wk,6);
+  $('wl').textContent=wk.toLocaleDateString(undefined,{day:'numeric',month:'short'})+' – '+we.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
+  $('nx').disabled=key(addD(wk,7))>t;
+  $('tdy').hidden=key(wk)===key(sun(now()))&&sel===t;
+  const wd=$('wd');wd.innerHTML='';
+  for(let i=0;i<7;i++){const d=addD(wk,i),k=key(d),st=dayStat(k),fut=k>t,b=document.createElement('button');
+    b.className='dc'+(k===sel?' sel':'')+(fut?' fut':'');b.disabled=fut;
+    b.innerHTML='<small>'+DN[i]+'</small><b>'+d.getDate()+'</b><i><u style="height:'+Math.round(st.p*100)+'%"></u></i>';b.onclick=()=>{sel=k;draw()};wd.appendChild(b)}
+  const ds=dayStat(sel),pc=Math.round(ds.p*100);
+  $('pt').textContent=sel===t?'Today · '+D(sel).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'}):D(sel).toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'});
+  $('pc').textContent=ds.n?ds.d+' of '+ds.n+' · '+pc+'%':(S.habits.length?'Nothing tracked yet':'No habits yet');
+  $('pb').className='prog'+(ds.n&&ds.d===ds.n?' full':'');$('pb').innerHTML='<i style="width:'+pc+'%"></i>';
+  const act=S.habits.filter(h=>!h.archived),arch=S.habits.filter(h=>h.archived),dn=act.filter(h=>h.done[sel]).length;
+  const chips=[['all','All '+act.length],['todo','To do '+(act.length-dn)],['done','Done '+dn]];if(arch.length)chips.push(['arch','Archived '+arch.length]);
+  const cs=$('chips');cs.innerHTML='';chips.forEach(([f,l])=>{const b=document.createElement('button');b.className='chip'+(f===filter?' on':'');b.textContent=l;b.onclick=()=>{filter=f;draw()};cs.appendChild(b)});
+  const list=filter==='arch'?arch:act.filter(h=>filter==='all'||(filter==='todo')!==!!h.done[sel]);
+  const l=$('list');l.innerHTML='';
+  if(!list.length)l.innerHTML='<div class="empty">'+(!S.habits.length?'No habits yet.<br>Tap + to add your first one.':filter==='todo'?'Nothing left to do. Nice.':filter==='done'?'Nothing ticked yet.':'Nothing here.')+'</div>';
+  list.forEach(h=>{
+    const s=stats(h),on=!!h.done[sel],el=document.createElement('div');el.className='h';el.style.setProperty('--c',h.color);
+    el.innerHTML='<div class="rowc"><div class="top"><button class="chk'+(on?' on':'')+'" aria-label="Tick">'+(on?'✓':'')+'</button><button class="name">'+esc(h.name)+'<div class="streak">'+(s.cur?s.cur+(s.cur===1?' day':' days')+' in a row':'No streak yet')+'</div></button></div><div class="dots"></div></div>';
+    el.querySelector('.chk').onclick=()=>tg(h,sel);
+    el.querySelector('.name').onclick=()=>{open=open===h.id?null:h.id;const n=now();cal={y:n.getFullYear(),m:n.getMonth()};draw()};
+    const dots=el.querySelector('.dots');
+    for(let i=0;i<7;i++){const d=addD(wk,i),k=key(d),c=document.createElement('div');c.className='d'+(h.done[k]?' on':'')+(k>t?' fut':'');c.innerHTML='<i></i><span>'+DN[i][0]+'</span>';if(k<=t)c.onclick=()=>tg(h,k);dots.appendChild(c)}
+    if(open===h.id)el.appendChild(panel(h,s));
+    l.appendChild(el)});
+}
+function panel(h,s){
+  const m=document.createElement('div');m.className='more';
+  const first=new Date(cal.y,cal.m,1,12),dim=new Date(cal.y,cal.m+1,0).getDate(),n=now(),isCur=cal.y===n.getFullYear()&&cal.m===n.getMonth();
+  let cells='';for(let i=0;i<first.getDay();i++)cells+='<div class="blank"></div>';
+  for(let d=1;d<=dim;d++){const k=key(new Date(cal.y,cal.m,d,12));cells+='<div data-k="'+k+'" class="'+(h.done[k]?'on':'')+(k>today()?' fut':'')+(k===today()?' tod':'')+'">'+d+'</div>'}
+  m.innerHTML='<div class="stats"><div class="stat"><b>'+s.cur+'</b><span>Current</span></div><div class="stat"><b>'+s.best+'</b><span>Best</span></div><div class="stat"><b>'+s.pct+'%</b><span>Last 30 days</span></div></div><div class="mh"><button class="b" data-m="-1">‹</button><span>'+first.toLocaleDateString(undefined,{month:'long',year:'numeric'})+'</span><button class="b" data-m="1"'+(isCur?' disabled':'')+'>›</button></div><div class="cal">'+'SMTWTFS'.split('').map(x=>'<div class="hd2">'+x+'</div>').join('')+cells+'</div><div class="hint">Tap any past day to tick or untick it.</div><div class="sw">'+COLORS.map(c=>'<button style="--c:'+c+'" class="'+(c===h.color?'on':'')+'" data-c="'+c+'" aria-label="Colour"></button>').join('')+'</div><div class="acts"><button class="b" data-a="rn">Rename</button><button class="b" data-a="up">Move up</button><button class="b" data-a="dn">Move down</button><button class="b" data-a="ar">'+(h.archived?'Unarchive':'Archive')+'</button><button class="b danger" data-a="rm">Remove</button></div>';
+  m.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const x=new Date(cal.y,cal.m+ +b.dataset.m,1);cal={y:x.getFullYear(),m:x.getMonth()};draw()});
+  m.querySelectorAll('.cal [data-k]:not(.fut)').forEach(c=>c.onclick=()=>tg(h,c.dataset.k));
+  m.querySelectorAll('[data-c]').forEach(c=>c.onclick=()=>{h.color=c.dataset.c;save();draw()});
+  const A={rn:()=>ask({title:'Rename habit',input:h.name,ok:'Save'},v=>{v=String(v).trim();if(v){h.name=v.slice(0,40);save();draw()}}),
+    up:()=>move(h,-1),dn:()=>move(h,1),
+    ar:()=>{h.archived=!h.archived;open=null;if(!S.habits.some(x=>x.archived))filter='all';save();draw()},
+    rm:()=>ask({title:'Remove “'+h.name+'”?',msg:'This deletes the habit and all its history. Archive it instead to keep the history.',ok:'Remove'},()=>{S.habits=S.habits.filter(x=>x!==h);open=null;save();draw()})};
+  m.querySelectorAll('[data-a]').forEach(b=>b.onclick=A[b.dataset.a]);
+  return m;
+}
+function addSheet(){
+  let pick=S.habits.length%COLORS.length;
+  const ov=document.createElement('div');ov.className='ov';
+  ov.innerHTML='<div class="box"><b>New habit</b><input placeholder="e.g. Read 10 pages" maxlength="40"><div class="sw"></div><div class="m" id="am">You can add several in a row.</div><div class="btns"><button class="b">Close</button><button class="b p">Add</button></div></div>';
+  document.body.appendChild(ov);
+  const inp=ov.querySelector('input'),sw=ov.querySelector('.sw'),[cl,ad]=ov.querySelectorAll('.btns .b');
+  const drawSw=()=>{sw.innerHTML='';COLORS.forEach((c,i)=>{const b=document.createElement('button');b.style.setProperty('--c',c);b.className=i===pick?'on':'';b.setAttribute('aria-label','Colour');tap(b,()=>{pick=i;drawSw()});sw.appendChild(b)})};drawSw();
+  inp.addEventListener('input',()=>inp.classList.remove('bad'));
+  const go=()=>{const n=inp.value.trim();if(!n){inp.classList.add('bad');inp.focus();return}
+    S.habits.push({id:'h'+Date.now()+Math.random().toString(36).slice(2,5),name:n,color:COLORS[pick],done:{},created:today()});
+    inp.value='';pick=(pick+1)%COLORS.length;drawSw();save();draw();ov.querySelector('#am').textContent='Added “'+n+'”. Add another or close.';cl.textContent='Done';inp.focus()};
+  tap(ad,go);cl.onclick=()=>ov.remove();inp.onkeydown=e=>{if(e.key==='Enter')go()};inp.focus();
+}
+tap($('fab'),addSheet);
+$('pv').onclick=()=>{wk=addD(wk,-7);draw()};
+$('nx').onclick=()=>{if(key(addD(wk,7))<=today()){wk=addD(wk,7);draw()}};
+$('tdy').onclick=()=>{sel=today();wk=sun(now());draw()};
+$('dn').onclick=()=>{S.dense=!S.dense;save();draw()};
+tap($('bk'),()=>backup('habits',()=>S,d=>{S=d;S.dense=!!S.dense;fix();open=null;filter='all';save();draw()},d=>d&&Array.isArray(d.habits),()=>{const r=[['Habit','Date','Completed']];S.habits.forEach(h=>Object.keys(h.done).sort().forEach(k=>r.push([h.name,k,'yes'])));return r}));
+draw();
+window.appSync={app:'habits',get:()=>S,empty:()=>!S.habits.length,set:d=>{S=d;S.dense=!!S.dense;fix();open=null;filter='all';saveLocal();draw()}};
+</script>
+<script type="module" src="sync.js"></script>
+</body>
+</html>

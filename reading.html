@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Reading &amp; Learning</title>
+<style>
+:root{--bg:#f3f1f7;--ink:#201c2e;--mute:#75708a;--card:#fff;--line:#e0dcec;--a:#5b45c9}
+@media (prefers-color-scheme:dark){:root{--bg:#14121d;--ink:#ece9f6;--mute:#9792ad;--card:#1e1b2b;--line:#312d45;--a:#8b78ee}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0 auto;background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,system-ui,sans-serif;padding:env(safe-area-inset-top) 18px calc(env(safe-area-inset-bottom) + 30px);max-width:560px}
+button{font:inherit;color:inherit}
+.hd{display:flex;justify-content:space-between;align-items:center;margin-top:22px}
+h1{font-size:22px;margin:0}
+.sub{color:var(--mute);margin:2px 0 14px}
+.tabs{display:flex;gap:8px;margin-bottom:14px}
+.tab{flex:1;padding:10px 0;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+.tab.on{background:var(--a);color:#fff;border-color:var(--a)}
+.it{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.t{font-weight:600}.m{color:var(--mute);font-size:14px}
+.bar{height:8px;border-radius:5px;background:var(--line);margin:10px 0;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--a)}
+.btns{display:flex;gap:8px}
+.b{flex:1;padding:10px 0;border-radius:12px;border:1px solid var(--line);background:none}
+.b.p{background:var(--a);color:#fff;border-color:var(--a);font-weight:600}
+.b.sm{flex:none;padding:8px 14px}
+.b.danger{color:#d9534f}
+input,select{font:inherit;font-size:16px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);width:100%;margin-bottom:8px;min-width:0}
+.bad{border-color:#d9534f!important}
+.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}
+.add{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:18px}
+.more{border-top:1px solid var(--line);margin-top:12px;padding-top:12px}
+.ses{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
+.x{background:none;border:0;color:var(--mute);font-size:18px;padding:4px 8px}
+.empty{color:var(--mute);text-align:center;padding:26px 0}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9;padding:16px}
+.ov[hidden]{display:none}
+.box{border-radius:18px;padding:18px;width:min(380px,100%);max-height:90vh;overflow:auto;background:var(--card);color:var(--ink)}
+.box input{margin:8px 0}.col2{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="hd"><h1>Reading &amp; Learning</h1><button class="b sm" id="bk">Backup</button></div>
+<p class="sub" id="sub"></p>
+<div class="tabs"><button class="tab on" data-f="going">In progress</button><button class="tab" data-f="done">Finished</button><button class="tab" data-f="log">Log</button></div>
+<div id="list"></div>
+<div class="add" id="addbox">
+  <b>Add something</b>
+  <input id="title" placeholder="Title, e.g. Atomic Habits" maxlength="60" style="margin-top:8px">
+  <div class="row"><select id="kind"><option value="pages">Book (pages)</option><option value="lessons">Course (lessons)</option><option value="articles">Articles</option><option value="chapters">Chapters</option></select><input id="total" type="number" inputmode="numeric"></div>
+  <button class="b p" id="addb" style="width:100%">Add</button>
+</div>
+<div id="dlg" class="ov" hidden><div class="box"><b id="dt"></b><div class="m" style="margin:4px 0 10px">What did you just do?</div>
+  <input id="u" type="number" inputmode="numeric">
+  <input id="mins" type="number" inputmode="numeric" placeholder="Minutes spent (optional)">
+  <div class="btns"><button class="b" id="cancel">Cancel</button><button class="b p" id="save">Save</button></div></div></div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function tap(el,fn){el.addEventListener('pointerdown',e=>e.preventDefault());el.addEventListener('click',fn)}
+function ask(o,cb){const ov=document.createElement('div');ov.className='ov';ov.innerHTML='<div class="box"><b>'+esc(o.title)+'</b><p class="m">'+esc(o.msg||'')+'</p>'+(o.input!=null?'<input value="'+esc(o.input)+'">':'')+'<div class="btns"><button class="b">Cancel</button><button class="b p">'+esc(o.ok||'OK')+'</button></div></div>';document.body.appendChild(ov);const[c,k]=ov.querySelectorAll('button'),inp=ov.querySelector('input');c.onclick=()=>ov.remove();k.onclick=()=>{const v=inp?inp.value:true;ov.remove();cb(v)};if(inp)inp.focus()}
+const csv=rows=>rows.map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+function backup(APP,get,set,valid,rows){
+  const ov=document.createElement('div');ov.className='ov';
+  ov.innerHTML='<div class="box"><b>Backup</b><p class="m" id="bm">Your data is saved only in this browser. Back it up now and then.</p><div class="col2"><button class="b p">Download backup (.json)</button><button class="b">Download spreadsheet (.csv)</button><button class="b">Copy backup text</button><button class="b">Restore from file…</button><button class="b">Restore from pasted text…</button><button class="b">Close</button></div><input type="file" hidden accept=".json,application/json,text/plain"></div>';
+  document.body.appendChild(ov);
+  const bs=ov.querySelectorAll('button'),fi=ov.querySelector('input'),msg=t=>ov.querySelector('#bm').textContent=t,stamp=new Date().toISOString().slice(0,10);
+  const pack=()=>JSON.stringify({app:APP,version:1,exported:new Date().toISOString(),data:get()},null,1);
+  const dl=(n,t,ty)=>{try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:ty}));a.download=n;document.body.appendChild(a);a.click();a.remove();msg('Downloaded '+n+'. Look in your Files or Downloads.')}catch(e){msg('Download was blocked here. Use “Copy backup text” instead.')}};
+  const restore=txt=>{let j;try{j=JSON.parse(txt)}catch(e){return msg('That isn’t a valid backup.')}
+    if(!j||j.app!==APP||!j.data||!valid(j.data))return msg('That backup is not for this app.');
+    ask({title:'Replace current data?',msg:'Everything in this app will be replaced by the backup.',ok:'Replace'},()=>{set(j.data);msg('Backup restored.')})};
+  bs[0].onclick=()=>dl(APP+'-backup-'+stamp+'.json',pack(),'application/json');
+  bs[1].onclick=()=>dl(APP+'-'+stamp+'.csv','\ufeff'+csv(rows()),'text/csv');
+  bs[2].onclick=()=>{(navigator.clipboard?navigator.clipboard.writeText(pack()):Promise.reject()).then(()=>msg('Backup copied. Paste it into Notes or an email.'),()=>msg('Copy was blocked here. Use the download button.'))};
+  bs[3].onclick=()=>fi.click();
+  fi.onchange=()=>{const f=fi.files[0];if(!f)return;const r=new FileReader();r.onload=()=>restore(r.result);r.readAsText(f);fi.value=''};
+  bs[4].onclick=()=>ask({title:'Paste backup text',input:'',ok:'Restore'},restore);
+  bs[5].onclick=()=>ov.remove();
+}
+
+const K='reading.v1';let S,filter='going',cur=null,openItem=null;
+try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
+S=S||{items:[]};
+const saveLocal=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};const save=()=>{saveLocal();if(window.Sync)window.Sync.changed()};
+const fd=t=>new Date(t).toLocaleDateString(undefined,{day:'numeric',month:'short'});
+const finished=i=>i.done>=i.total;
+function draw(){
+  const wk=Date.now()-7*864e5;
+  const mins=S.items.flatMap(i=>i.log).filter(l=>l.t>wk).reduce((a,l)=>a+l.m,0);
+  $('sub').textContent=mins+' min this week · '+S.items.filter(finished).length+' finished';
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.f===filter));
+  $('addbox').hidden=filter==='log';
+  const l=$('list');l.innerHTML='';
+  if(filter==='log')return drawLog(l);
+  const items=S.items.filter(i=>finished(i)===(filter==='done'));
+  if(!items.length)l.innerHTML='<div class="empty">'+(filter==='done'?'Nothing finished yet.':'Nothing in progress. Add something below.')+'</div>';
+  items.forEach(i=>{
+    const p=Math.min(100,Math.round(i.done/i.total*100)),el=document.createElement('div');el.className='it';
+    const tm=i.log.reduce((a,x)=>a+x.m,0);
+    el.innerHTML='<div class="t">'+esc(i.title)+'</div><div class="m">'+i.done+' of '+i.total+' '+i.kind+' · '+p+'%'+(tm?' · '+tm+' min':'')+'</div><div class="bar"><i style="width:'+p+'%"></i></div><div class="btns"><button class="b p">Log progress</button><button class="b">'+(openItem===i?'Close':'More')+'</button></div>';
+    const[a,b]=el.querySelectorAll('button');
+    a.onclick=()=>{cur=i;$('dt').textContent=i.title;$('u').placeholder='How many '+i.kind+'?';$('u').value='';$('mins').value='';$('u').classList.remove('bad');$('dlg').hidden=false};
+    b.onclick=()=>{openItem=openItem===i?null:i;draw()};
+    if(openItem===i){
+      const m=document.createElement('div');m.className='more';
+      m.innerHTML='<div class="row"><input class="et" value="'+esc(i.title)+'" maxlength="60"><input class="en" type="number" inputmode="numeric" value="'+i.total+'"></div><div class="btns"><button class="b p">Save changes</button><button class="b danger">Remove</button></div><div style="margin-top:12px" class="m">Sessions</div>'+(i.log.length?i.log.slice().reverse().map((x,n)=>'<div class="ses"><span>'+fd(x.t)+' · +'+x.u+' '+i.kind+(x.m?' · '+x.m+' min':'')+'</span><button class="x" data-n="'+(i.log.length-1-n)+'" aria-label="Delete session">✕</button></div>').join(''):'<div class="m" style="padding:6px 0">No sessions logged yet.</div>');
+      const[sv,rm]=m.querySelectorAll('.btns .b');
+      sv.onclick=()=>{const t=m.querySelector('.et').value.trim(),n=+m.querySelector('.en').value;if(!t||!(n>0))return;i.title=t;i.total=Math.round(n);i.done=Math.min(i.done,i.total);save();draw()};
+      rm.onclick=()=>ask({title:'Remove “'+i.title+'”?',msg:'Its progress and sessions will be deleted.',ok:'Remove'},()=>{S.items=S.items.filter(x=>x!==i);openItem=null;save();draw()});
+      m.querySelectorAll('.x').forEach(x=>x.onclick=()=>delSes(i,+x.dataset.n));
+      el.appendChild(m);
+    }
+    l.appendChild(el)});
+}
+function delSes(i,n){const s=i.log.splice(n,1)[0];i.done=Math.max(0,i.done-(s.u||0));save();draw()}
+function drawLog(l){
+  const all=S.items.flatMap(i=>i.log.map((x,n)=>({i,x,n}))).sort((a,b)=>b.x.t-a.x.t);
+  if(!all.length){l.innerHTML='<div class="empty">No sessions yet. Tap “Log progress” on anything.</div>';return}
+  const c=document.createElement('div');c.className='it';
+  c.innerHTML=all.map((r,k)=>'<div class="ses"><span>'+fd(r.x.t)+' · '+esc(r.i.title)+' · +'+r.x.u+' '+r.i.kind+(r.x.m?' · '+r.x.m+' min':'')+'</span><button class="x" data-k="'+k+'" aria-label="Delete session">✕</button></div>').join('');
+  c.querySelectorAll('.x').forEach(x=>x.onclick=()=>{const r=all[+x.dataset.k];delSes(r.i,r.i.log.indexOf(r.x))});
+  l.appendChild(c);
+}
+tap($('cancel'),()=>{$('dlg').hidden=true});
+tap($('save'),()=>{if(!cur)return;if(!(+$('u').value>0)){$('u').classList.add('bad');$('u').focus();return}
+  const u=Math.round(+$('u').value),m=Math.max(0,Math.round(+$('mins').value||0));cur.done=Math.min(cur.total,cur.done+u);cur.log.push({t:Date.now(),u,m});save();draw();$('dlg').hidden=true});
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{filter=t.dataset.f;draw()});
+const KT={pages:'Total pages',lessons:'Total lessons',articles:'Total articles',chapters:'Total chapters'};
+const setPh=()=>{$('total').placeholder=KT[$('kind').value]};$('kind').onchange=setPh;setPh();
+['title','total'].forEach(id=>$(id).addEventListener('input',()=>$(id).classList.remove('bad')));
+tap($('addb'),()=>{const t=$('title').value.trim(),n=+$('total').value;
+  if(!t){$('title').classList.add('bad');$('title').focus();return}
+  if(!(n>0)){$('total').classList.add('bad');$('total').focus();return}
+  S.items.push({title:t,kind:$('kind').value,total:Math.round(n),done:0,log:[]});$('title').value='';$('total').value='';filter='going';save();draw()});
+tap($('bk'),()=>backup('reading',()=>S,d=>{S=d;openItem=null;save();draw()},d=>d&&Array.isArray(d.items),()=>[['Title','Type','Done','Total','Percent','Minutes logged','Sessions']].concat(S.items.map(i=>[i.title,i.kind,i.done,i.total,Math.min(100,Math.round(i.done/i.total*100)),i.log.reduce((a,x)=>a+x.m,0),i.log.length]))));
+draw();
+window.appSync={app:'reading',get:()=>S,empty:()=>!S.items.length,set:d=>{S=d;openItem=null;saveLocal();draw()}};
+</script>
+<script type="module" src="sync.js"></script>
+</body>
+</html>

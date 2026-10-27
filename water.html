@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Water</title>
+<style>
+:root{--bg:#eef6fa;--ink:#0d2b3a;--mute:#5d7885;--water:#2a9fd6;--deep:#1673a3;--card:#fff;--line:#d5e5ee;--ok:#2fa66a}
+@media (prefers-color-scheme:dark){:root{--bg:#09161d;--ink:#e3f1f8;--mute:#8aa6b3;--water:#3bb0e8;--deep:#2a9fd6;--card:#102530;--line:#1c3846}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0 auto;background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,system-ui,sans-serif;padding:env(safe-area-inset-top) 18px calc(env(safe-area-inset-bottom) + 30px);max-width:560px}
+button{font:inherit;color:inherit}
+.hd{display:flex;justify-content:space-between;align-items:center;margin-top:22px}
+h1{font-size:22px;margin:0}
+.date{color:var(--mute);margin:2px 0 14px}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tab{flex:1;padding:10px 0;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+.tab.on{background:var(--water);color:#fff;border-color:var(--water)}
+.glass{position:relative;height:230px;border:3px solid var(--deep);border-top-width:0;border-radius:0 0 40px 40px;overflow:hidden;background:var(--card)}
+.fill{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(var(--water),var(--deep));transition:height .6s ease;height:0}
+.read{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-shadow:0 1px 8px var(--card)}
+.read b{font-size:44px}.read span{color:var(--mute)}
+.row{display:flex;gap:10px;margin:16px 0}
+.b{flex:1;border:0;border-radius:14px;padding:14px 0;background:var(--water);color:#fff;font-weight:600}
+.b.alt{background:var(--card);color:var(--ink);border:1px solid var(--line);font-weight:500}
+input{font:inherit;font-size:16px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);width:100%;min-width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:16px}
+.week{display:flex;gap:8px;align-items:flex-end;height:110px;margin-top:8px}
+.col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:12px;color:var(--mute)}
+.bar{width:100%;border-radius:6px;background:var(--line);min-height:4px}.bar.hit{background:var(--water)}
+.log>div{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.log>div:last-child{border:0}
+label,.m{color:var(--mute);font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.st{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 4px;text-align:center}
+.st b{display:block;font-size:18px}.st span{font-size:12px;color:var(--mute)}
+.day{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:8px}
+.dh{display:flex;justify-content:space-between;align-items:center;width:100%;background:none;border:0;padding:0;text-align:left}
+.tr{height:8px;background:var(--line);border-radius:5px;margin-top:8px;overflow:hidden}
+.tr i{display:block;height:100%;background:var(--water)}.tr.hit i{background:var(--ok)}
+.x{background:none;border:0;color:var(--mute);font-size:18px;padding:4px 8px}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9;padding:16px}
+.box{border-radius:18px;padding:18px;width:min(380px,100%);max-height:90vh;overflow:auto;background:var(--card);color:var(--ink)}
+.box input{margin:8px 0}.col2{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.btns{display:flex;gap:8px}.btns .b{padding:12px 0}
+.small{padding:8px 14px;flex:none}
+</style>
+</head>
+<body>
+<div class="hd"><h1>Water</h1><button class="b alt small" id="bk">Backup</button></div>
+<p class="date" id="date"></p>
+<div class="tabs"><button class="tab on" data-v="today">Today</button><button class="tab" data-v="hist">History</button></div>
+<div id="today">
+  <div class="glass"><div class="fill" id="fill"></div><div class="read"><b id="amt">0</b><span id="of"></span></div></div>
+  <div class="row"><button class="b" data-add="150">+150</button><button class="b" data-add="250">+250</button><button class="b" data-add="500">+500</button></div>
+  <div class="row"><input id="custom" type="number" inputmode="numeric" placeholder="Other amount (ml)"><button class="b alt" id="addc" style="flex:0 0 90px">Add</button></div>
+  <div class="card"><b>Last 7 days</b><div class="week" id="week"></div></div>
+  <div class="card log"><b>Today</b><div id="log"></div><button class="b alt" id="undo" style="margin-top:10px;width:100%">Undo last</button></div>
+  <div class="card"><label for="goal">Daily goal (ml)</label><input id="goal" type="number" inputmode="numeric" style="margin-top:6px"></div>
+</div>
+<div id="hist" hidden></div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function tap(el,fn){el.addEventListener('pointerdown',e=>e.preventDefault());el.addEventListener('click',fn)}
+function ask(o,cb){const ov=document.createElement('div');ov.className='ov';ov.innerHTML='<div class="box"><b>'+esc(o.title)+'</b><p class="m">'+esc(o.msg||'')+'</p>'+(o.input!=null?'<input value="'+esc(o.input)+'">':'')+'<div class="btns"><button class="b alt">Cancel</button><button class="b">'+esc(o.ok||'OK')+'</button></div></div>';document.body.appendChild(ov);const[c,k]=ov.querySelectorAll('button'),inp=ov.querySelector('input');c.onclick=()=>ov.remove();k.onclick=()=>{const v=inp?inp.value:true;ov.remove();cb(v)};if(inp)inp.focus()}
+const csv=rows=>rows.map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+function backup(APP,get,set,valid,rows){
+  const ov=document.createElement('div');ov.className='ov';
+  ov.innerHTML='<div class="box"><b>Backup</b><p class="m" id="bm">Your data is saved only in this browser. Back it up now and then.</p><div class="col2"><button class="b">Download backup (.json)</button><button class="b alt">Download spreadsheet (.csv)</button><button class="b alt">Copy backup text</button><button class="b alt">Restore from file…</button><button class="b alt">Restore from pasted text…</button><button class="b alt">Close</button></div><input type="file" hidden accept=".json,application/json,text/plain"></div>';
+  document.body.appendChild(ov);
+  const bs=ov.querySelectorAll('button'),fi=ov.querySelector('input'),msg=t=>ov.querySelector('#bm').textContent=t,stamp=new Date().toISOString().slice(0,10);
+  const pack=()=>JSON.stringify({app:APP,version:1,exported:new Date().toISOString(),data:get()},null,1);
+  const dl=(n,t,ty)=>{try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:ty}));a.download=n;document.body.appendChild(a);a.click();a.remove();msg('Downloaded '+n+'. Look in your Files or Downloads.')}catch(e){msg('Download was blocked here. Use “Copy backup text” instead.')}};
+  const restore=txt=>{let j;try{j=JSON.parse(txt)}catch(e){return msg('That isn’t a valid backup.')}
+    if(!j||j.app!==APP||!j.data||!valid(j.data))return msg('That backup is not for this app.');
+    ask({title:'Replace current data?',msg:'Everything in this app will be replaced by the backup.',ok:'Replace'},()=>{set(j.data);msg('Backup restored.')})};
+  bs[0].onclick=()=>dl(APP+'-backup-'+stamp+'.json',pack(),'application/json');
+  bs[1].onclick=()=>dl(APP+'-'+stamp+'.csv','\ufeff'+csv(rows()),'text/csv');
+  bs[2].onclick=()=>{(navigator.clipboard?navigator.clipboard.writeText(pack()):Promise.reject()).then(()=>msg('Backup copied. Paste it into Notes or an email.'),()=>msg('Copy was blocked here. Use the download button.'))};
+  bs[3].onclick=()=>fi.click();
+  fi.onchange=()=>{const f=fi.files[0];if(!f)return;const r=new FileReader();r.onload=()=>restore(r.result);r.readAsText(f);fi.value=''};
+  bs[4].onclick=()=>ask({title:'Paste backup text',input:'',ok:'Restore'},restore);
+  bs[5].onclick=()=>ov.remove();
+}
+
+const K='water.v1';let S,view='today',openDay=null;
+try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
+S=S||{goal:2000,days:{}};S.goals=S.goals||{};
+const saveLocal=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};const save=()=>{saveLocal();if(window.Sync)window.Sync.changed()};
+const key=d=>{const x=new Date(d);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')};
+const sum=k=>(S.days[k]||[]).reduce((a,e)=>a+e.ml,0);
+const goalOf=k=>S.goals[k]||S.goal;
+const tk=()=>key(Date.now());
+function add(ml,k){ml=Math.round(ml);if(!(ml>0))return;k=k||tk();const past=k!==tk();(S.days[k]=S.days[k]||[]).push(past?{ml,t:new Date(k+'T12:00:00').getTime(),m:1}:{ml,t:Date.now()});save();draw()}
+function draw(){
+  $('date').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'});
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.v===view));
+  $('today').hidden=view!=='today';$('hist').hidden=view!=='hist';
+  if(view==='hist')return drawHist();
+  const k=tk(),t=sum(k);
+  $('amt').textContent=t+' ml';$('of').textContent='of '+S.goal+' ml';
+  $('fill').style.height=Math.min(100,t/S.goal*100)+'%';$('goal').value=S.goal;
+  const w=$('week');w.innerHTML='';
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const v=sum(key(d)),g=goalOf(key(d));
+    const c=document.createElement('div');c.className='col';
+    c.innerHTML='<div class="bar'+(v>=g?' hit':'')+'" style="height:'+Math.max(4,Math.min(100,v/g*100))+'%"></div><div>'+d.toLocaleDateString(undefined,{weekday:'narrow'})+'</div>';w.appendChild(c)}
+  const l=$('log');l.innerHTML='';const es=S.days[k]||[];
+  if(!es.length)l.innerHTML='<div class="m">Nothing yet. Tap a button above.</div>';
+  es.slice().reverse().forEach(e=>{const r=document.createElement('div');r.innerHTML='<span>'+new Date(e.t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+'</span><span>'+e.ml+' ml</span>';l.appendChild(r)});
+}
+function drawHist(){
+  const box=$('hist'),keys=Object.keys(S.days).filter(k=>S.days[k].length).sort();
+  if(!keys.length){box.innerHTML='<div class="card m">No history yet. Log some water on the Today tab.</div>';return}
+  let met=0,tot=0,best=0;keys.forEach(k=>{const v=sum(k);tot+=v;best=Math.max(best,v);if(v>=goalOf(k))met++});
+  let st=0,i=sum(tk())>=S.goal?0:1;for(;;i++){const d=new Date();d.setDate(d.getDate()-i);const k=key(d);if(sum(k)>0&&sum(k)>=goalOf(k))st++;else break}
+  let h='<div class="stats"><div class="st"><b>'+Math.round(tot/keys.length)+'</b><span>Avg ml/day</span></div><div class="st"><b>'+best+'</b><span>Best day</span></div><div class="st"><b>'+met+'/'+keys.length+'</b><span>Goal met</span></div><div class="st"><b>'+st+'</b><span>Day streak</span></div></div>';
+  const n=Math.round((new Date().setHours(12,0,0,0)-new Date(keys[0]+'T12:00:00'))/864e5);
+  for(let j=0;j<=n;j++){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-j);const k=key(d),v=sum(k),g=goalOf(k),hit=v>=g&&v>0,op=openDay===k;
+    h+='<div class="day"><button class="dh" data-k="'+k+'"><span>'+d.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short',year:'numeric'})+'</span><span'+(v?'':' class="m"')+'>'+v+' ml'+(hit?' ✓':'')+'</span></button><div class="tr'+(hit?' hit':'')+'"><i style="width:'+Math.min(100,v/g*100)+'%"></i></div>';
+    if(op){h+='<div class="log" style="margin-top:8px">'+(S.days[k]||[]).map((e,x)=>'<div><span>'+(e.m?'Added later':new Date(e.t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}))+' · '+e.ml+' ml</span><button class="x" data-del="'+k+'|'+x+'" aria-label="Delete">✕</button></div>').join('')+'</div><div class="row" style="margin:8px 0 0"><input type="number" inputmode="numeric" placeholder="Add ml to this day" id="pa"><button class="b alt" id="pab" style="flex:0 0 80px">Add</button></div><div class="m" style="margin-top:6px">Goal that day: '+g+' ml</div>'}
+    h+='</div>'}
+  box.innerHTML=h;
+  box.querySelectorAll('.dh').forEach(b=>b.onclick=()=>{openDay=openDay===b.dataset.k?null:b.dataset.k;draw()});
+  box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const[k,x]=b.dataset.del.split('|');S.days[k].splice(+x,1);if(!S.days[k].length)delete S.days[k];save();draw()});
+  if(openDay&&$('pab')){const go=()=>{const v=+$('pa').value;if(!(v>0)){$('pa').style.borderColor='#d9534f';return $('pa').focus()}add(v,openDay)};tap($('pab'),go);$('pa').onkeydown=e=>{if(e.key==='Enter')go()}}
+}
+document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>add(+b.dataset.add));
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{view=t.dataset.v;draw()});
+const addCustom=()=>{if(!(+$('custom').value>0)){$('custom').style.borderColor='#d9534f';$('custom').focus();return}$('custom').style.borderColor='';add(+$('custom').value);$('custom').value='';$('custom').blur()};
+tap($('addc'),addCustom);$('custom').onkeydown=e=>{if(e.key==='Enter')addCustom()};
+$('undo').onclick=()=>{const es=S.days[tk()];if(es&&es.length){es.pop();if(!es.length)delete S.days[tk()];save();draw()}};
+$('goal').onchange=e=>{const g=+e.target.value;if(g>0){Object.keys(S.days).forEach(k=>{if(k<tk()&&!S.goals[k])S.goals[k]=S.goal});S.goal=g;save();draw()}else e.target.value=S.goal};
+tap($('bk'),()=>backup('water',()=>S,d=>{S=d;S.goals=S.goals||{};save();draw()},d=>d&&typeof d.days==='object'&&!Array.isArray(d.days),()=>[['Date','Total ml','Goal ml','Goal met','Entries']].concat(Object.keys(S.days).sort().map(k=>[k,sum(k),goalOf(k),sum(k)>=goalOf(k)?'yes':'no',S.days[k].length]))));
+draw();
+window.appSync={app:'water',get:()=>S,empty:()=>!Object.keys(S.days).length,set:d=>{S=d;S.goals=S.goals||{};saveLocal();draw()}};
+</script>
+<script type="module" src="sync.js"></script>
+</body>
+</html>
